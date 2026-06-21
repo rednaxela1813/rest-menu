@@ -1,0 +1,3 @@
+{% load i18n %}
+<div class="status-line">{{ order.guest_status_text }}</div>
+<p class="muted">{% trans "Vytvorené" %}: {{ order.created_at|date:"H:i" }}</p>

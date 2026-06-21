@@ -1,0 +1,16 @@
+{# Renders a single modifier group `link` (MenuItemModifierGroup). #}
+<fieldset class="cfg__group">
+    <legend>{{ link.modifier_group.name }}{% if link.effective_required %} <span class="req">*</span>{% endif %}</legend>
+    {% for option in link.modifier_group.options.all %}
+    <label class="opt">
+        {# Per-group field name: radio exclusivity scoped to the group (drink choice must not clear fries). #}
+        <input type="{% if link.modifier_group.selection_type == 'SINGLE' %}radio{% else %}checkbox{% endif %}"
+               name="opt-{{ link.modifier_group.id }}" value="{{ option.id }}"
+               data-price="{{ option.price_delta|stringformat:'.2f' }}"
+               {% if selected_ids %}{% if option.id in selected_ids %}checked{% endif %}{% elif option.is_default %}checked{% endif %}
+               onchange="recalcCfg(this.form)">
+        <span class="opt__name">{{ option.name }}</span>
+        {% if option.price_delta %}<span class="opt__price">+{{ option.price_delta }} €</span>{% endif %}
+    </label>
+    {% endfor %}
+</fieldset>

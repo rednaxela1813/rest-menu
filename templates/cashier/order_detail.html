@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{{ order.order_number }}{% endblock %}
+{% block content %}
+<div class="topbar">
+    <a href="{% url 'cashier:board' %}" class="btn">← {% trans "Späť" %}</a>
+    <h1>{{ order.order_number }}</h1>
+    <span class="table-badge">{% if order.table %}{{ order.table }}{% else %}—{% endif %}</span>
+</div>
+
+<div class="container">
+    <p class="muted">{{ order.created_at|date:"d.m.Y H:i" }} · {{ order.get_source_display }}
+        · <strong>{{ order.get_status_display }}</strong></p>
+
+    {% for item in order.items.all %}
+    <div class="card" style="margin-bottom:8px;"><div class="card__body">
+        <div style="display:flex;justify-content:space-between;">
+            <strong>{{ item.quantity }}× {{ item.item_name_snapshot }}</strong>
+            <span class="card__price">{{ item.line_total }} €</span>
+        </div>
+        {% for m in item.modifiers.all %}<div class="muted">+ {{ m.option_name_snapshot }} ({{ m.total_delta }} €)</div>{% endfor %}
+        {% if item.customer_comment %}<div class="muted">📝 {{ item.customer_comment }}</div>{% endif %}
+    </div></div>
+    {% endfor %}
+
+    {% if order.customer_comment %}<div class="message">{% trans "Poznámka hosťa" %}: {{ order.customer_comment }}</div>{% endif %}
+    <div class="status-line" style="text-align:right;">{% trans "Spolu" %}: {{ order.total }} €</div>
+
+    <div style="display:grid;gap:10px;grid-template-columns:1fr 1fr;margin-top:16px;">
+        {% if order.status == 'new' %}
+        <form method="post" action="{% url 'cashier:confirm' order.public_id %}">{% csrf_token %}
+            <input type="hidden" name="version" value="{{ order.version }}">
+            <button class="btn btn--ok btn--block">{% trans "Potvrdiť" %}</button></form>
+        <form method="post" action="{% url 'cashier:reject' order.public_id %}">{% csrf_token %}
+            <input type="hidden" name="version" value="{{ order.version }}">
+            <button class="btn btn--danger btn--block">{% trans "Zamietnuť" %}</button></form>
+        {% endif %}
+        {% if order.status == 'ready' %}
+        <form method="post" action="{% url 'cashier:serve' order.public_id %}">{% csrf_token %}
+            <input type="hidden" name="version" value="{{ order.version }}">
+            <button class="btn btn--ok btn--block">{% trans "Vydať" %}</button></form>
+        {% endif %}
+        {% if order.status != 'served' and order.status != 'cancelled' and order.status != 'rejected' %}
+        <form method="post" action="{% url 'cashier:cancel' order.public_id %}">{% csrf_token %}
+            <input type="hidden" name="version" value="{{ order.version }}">
+            <button class="btn btn--danger btn--block">{% trans "Zrušiť" %}</button></form>
+        {% endif %}
+    </div>
+
+    <h2 class="section-title">{% trans "História stavov" %}</h2>
+    {% for h in order.status_history.all %}
+    <div class="muted">{{ h.created_at|date:"H:i:s" }} — {{ h.get_previous_status_display|default:"—" }} → {{ h.get_new_status_display }}{% if h.changed_by %} ({{ h.changed_by }}){% endif %}</div>
+    {% endfor %}
+</div>
+{% endblock %}

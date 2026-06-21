@@ -1,0 +1,18 @@
+# Cloudflare Tunnel overlay — adds a public HTTPS URL to the LOCAL server
+# without opening any router port. Data stays on the on-premise machine.
+#
+# Use together with the production stack:
+#   docker compose -f docker-compose.production.yml -f docker-compose.tunnel.yml up -d
+#
+# Requires CLOUDFLARE_TUNNEL_TOKEN in .env (see docs/TUNNEL.md).
+name: burger_menu
+
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    # The named tunnel's public hostname is mapped to http://nginx:80 in the
+    # Cloudflare Zero Trust dashboard; the token carries that configuration.
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - nginx

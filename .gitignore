@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Django
+*.log
+logs/
+media/
+staticfiles/
+test_media/
+db.sqlite3
+
+# Secrets
+.env
+
+# Backups
+backups/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/

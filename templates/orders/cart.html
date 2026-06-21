@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Košík" %}{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <a href="{% url 'menu:guest_menu' %}" class="btn">← {% trans "Menu" %}</a>
+    <h1>{% trans "Košík" %}</h1>
+    {% if table %}<span class="table-badge">{{ table }}</span>{% else %}<span></span>{% endif %}
+</div>
+
+<div class="container" style="padding-bottom:160px;">
+    {% if lines %}
+    {% for line in lines %}
+    <div class="card" style="margin-bottom:12px;">
+        <div class="card__body">
+            <div style="display:flex;justify-content:space-between;">
+                <strong>{{ line.quantity }}× {{ line.name }}</strong>
+                <span class="card__price">{{ line.line_total }} €</span>
+            </div>
+            {% for m in line.modifiers %}
+            <div class="muted">+ {{ m.option_name }}{% if m.price_delta %} ({{ m.price_delta }} €){% endif %}</div>
+            {% endfor %}
+            {% if line.comment %}<div class="muted">📝 {{ line.comment }}</div>{% endif %}
+            <div class="cart-line-actions">
+                {# Instant quantity steppers — each posts the new quantity. #}
+                <div class="qty">
+                    <form method="post" action="{% url 'orders:cart_update' line.line_id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="quantity" value="{{ line.quantity|add:'-1' }}">
+                        <button class="qty__btn" {% if line.quantity <= 1 %}disabled{% endif %}>−</button>
+                    </form>
+                    <span class="qty__value">{{ line.quantity }}</span>
+                    <form method="post" action="{% url 'orders:cart_update' line.line_id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="quantity" value="{{ line.quantity|add:'1' }}">
+                        <button class="qty__btn">+</button>
+                    </form>
+                </div>
+                <a class="btn" href="{% url 'menu:item_detail' line.menu_item_public_id %}?edit={{ line.line_id }}">
+                    {% trans "Upraviť" %}
+                </a>
+                <form method="post" action="{% url 'orders:cart_remove' line.line_id %}">
+                    {% csrf_token %}
+                    <button class="btn btn--danger">{% trans "Odstrániť" %}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="card"><div class="card__body">
+        <div style="display:flex;justify-content:space-between;font-size:1.3rem;font-weight:700;">
+            <span>{% trans "Spolu" %}</span><span>{{ cart.total }} €</span>
+        </div>
+    </div></div>
+
+    <p class="muted" style="margin-top:16px;">
+        {% trans "Skontrolujte svoju objednávku. Po odoslaní ju musí potvrdiť obsluha." %}
+    </p>
+
+    <div class="cart-fab">
+        <form method="post" action="{% url 'orders:order_create' %}" data-once>
+            {% csrf_token %}
+            <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
+            <button type="submit" class="btn btn--primary btn--block">
+                {% trans "Odoslať objednávku" %}
+            </button>
+        </form>
+    </div>
+    {% else %}
+    <p class="muted">{% trans "Košík je prázdny." %}</p>
+    <a href="{% url 'menu:guest_menu' %}" class="btn btn--primary btn--block">{% trans "Prejsť na menu" %}</a>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Prihlásenie" %}{% endblock %}
+{% block content %}
+<div class="container" style="max-width:420px;margin-top:60px;">
+    <h1>{% trans "Prihlásenie personálu" %}</h1>
+    <form method="post">
+        {% csrf_token %}
+        {% if form.errors %}<div class="message message--error">{% trans "Nesprávny e-mail alebo heslo." %}</div>{% endif %}
+        <label>{% trans "E-mail" %}<input type="email" name="username" autofocus required></label>
+        <label>{% trans "Heslo" %}<input type="password" name="password" required></label>
+        <button type="submit" class="btn btn--primary btn--block" style="margin-top:12px;">{% trans "Prihlásiť sa" %}</button>
+        <input type="hidden" name="next" value="{{ next }}">
+    </form>
+</div>
+{% endblock %}

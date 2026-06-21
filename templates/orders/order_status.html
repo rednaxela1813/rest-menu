@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Stav objednávky" %} {{ order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <h1>{% trans "Objednávka" %} {{ order.order_number }}</h1>
+    {% if order.table %}<span class="table-badge">{{ order.table }}</span>{% endif %}
+</div>
+
+<div class="container">
+    {# Live region: WebSocket on ws-url, polling fallback every 8s. #}
+    <div id="status-live"
+         data-poll-url="{% url 'orders:order_status' order.public_id %}"
+         data-ws-url="/ws/order/{{ order.public_id }}/"
+         data-poll-interval="8000">
+        {% include "orders/_status_fragment.html" %}
+    </div>
+
+    <h2 class="section-title">{% trans "Položky" %}</h2>
+    {% for item in order.items.all %}
+    <div class="card" style="margin-bottom:8px;"><div class="card__body">
+        <div style="display:flex;justify-content:space-between;">
+            <strong>{{ item.quantity }}× {{ item.item_name_snapshot }}</strong>
+            <span class="card__price">{{ item.line_total }} €</span>
+        </div>
+        {% for m in item.modifiers.all %}<div class="muted">+ {{ m.option_name_snapshot }}</div>{% endfor %}
+        {% if item.customer_comment %}<div class="muted">📝 {{ item.customer_comment }}</div>{% endif %}
+    </div></div>
+    {% endfor %}
+    <div class="status-line" style="text-align:right;">{% trans "Spolu" %}: {{ order.total }} €</div>
+</div>
+{% endblock %}

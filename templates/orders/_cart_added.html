@@ -1,0 +1,13 @@
+{% load i18n %}
+<div class="cfg__done">
+    <div class="cfg__done-icon">✓</div>
+    <p class="cfg__done-text">{% trans "Pridané do košíka" %}</p>
+    <div class="cfg__done-actions">
+        <button type="button" class="btn" onclick="closeAllDishes()">{% trans "Pokračovať" %}</button>
+        <a class="btn btn--primary" href="{% url 'orders:cart_detail' %}">
+            🛒 {% trans "Košík" %} ({{ cart.count }})
+        </a>
+    </div>
+</div>
+{# Out-of-band update of the floating cart badge. #}
+<span id="cart-fab-count" hx-swap-oob="true">{{ cart.count }}</span>

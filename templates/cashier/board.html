@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Pokladňa" %}{% endblock %}
+{% block body_class %}cashier{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <h1>{% trans "Pokladňa" %} · {{ restaurant.name }}</h1>
+    <a href="{% url 'accounts:logout' %}" class="btn">{% trans "Odhlásiť" %}</a>
+</div>
+
+<div id="board-live"
+     data-poll-url="{% url 'cashier:board' %}"
+     data-ws-url="/ws/cashier/{{ restaurant.id }}/"
+     data-poll-interval="10000"
+     data-sound="true">
+    {% include "cashier/_board_columns.html" %}
+</div>
+{% endblock %}

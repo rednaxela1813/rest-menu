@@ -1,0 +1,32 @@
+{% load i18n %}
+<article class="dish{% if not item.is_available %} dish--out{% endif %}" id="dish-{{ item.id }}">
+    <div class="dish__header"
+         role="button" tabindex="0"
+         {% if item.is_available %}
+         hx-get="{% url 'menu:item_config' item.public_id %}"
+         hx-target="#panel-{{ item.id }}"
+         hx-swap="innerHTML"
+         {% endif %}>
+        <div class="dish__photo"{% if item.image %} style="background-image:url('{{ item.image.url }}')"{% endif %}>
+            {% if not item.image %}<span class="dish__emoji">🍔</span>{% endif %}
+            <span class="dish__price">{{ item.price }} €</span>
+            {% if not item.is_available %}<span class="dish__out-badge">{% trans "Nedostupné" %}</span>{% endif %}
+        </div>
+        <div class="dish__body">
+            <h3 class="dish__name">{{ item.name }}</h3>
+            {% if item.short_description %}<p class="dish__desc">{{ item.short_description }}</p>{% endif %}
+            <div class="dish__meta">
+                {% if item.allergens.all %}
+                <span class="dish__alg">{% trans "Alergény" %}:
+                    {% for a in item.allergens.all %}{{ a.code }}{% if not forloop.last %},{% endif %}{% endfor %}
+                </span>
+                {% endif %}
+                {% if item.is_available %}
+                <span class="dish__cta">{% trans "Vybrať" %} <span class="dish__chev">›</span></span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {# HTMX swaps the configuration form here — the card expands in place. #}
+    <div class="dish__panel" id="panel-{{ item.id }}"></div>
+</article>

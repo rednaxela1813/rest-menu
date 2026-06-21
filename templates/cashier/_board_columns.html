@@ -1,0 +1,23 @@
+{% load i18n %}
+<div class="board">
+    <div class="column">
+        <h2>{% trans "Nové" %} ({{ columns.new|length }})</h2>
+        {% for order in columns.new %}{% include "cashier/_order_card.html" with new=True %}{% endfor %}
+    </div>
+    <div class="column">
+        <h2>{% trans "Potvrdené" %} ({{ columns.confirmed|length }})</h2>
+        {% for order in columns.confirmed %}{% include "cashier/_order_card.html" %}{% endfor %}
+    </div>
+    <div class="column">
+        <h2>{% trans "Pripravuje sa" %} ({{ columns.in_preparation|length }})</h2>
+        {% for order in columns.in_preparation %}{% include "cashier/_order_card.html" %}{% endfor %}
+    </div>
+    <div class="column">
+        <h2>{% trans "Pripravené" %} ({{ columns.ready|length }})</h2>
+        {% for order in columns.ready %}{% include "cashier/_order_card.html" %}{% endfor %}
+    </div>
+    <div class="column">
+        <h2>{% trans "Vydané" %}</h2>
+        {% for order in columns.served %}{% include "cashier/_order_card.html" %}{% endfor %}
+    </div>
+</div>

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Kuchyňa" %}{% endblock %}
+{% block body_class %}kitchen{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <h1>{% trans "Kuchyňa" %} · {{ restaurant.name }}</h1>
+    <div>
+        <button class="btn" onclick="document.documentElement.requestFullscreen && document.documentElement.requestFullscreen()">⛶</button>
+        <a href="{% url 'accounts:logout' %}" class="btn">{% trans "Odhlásiť" %}</a>
+    </div>
+</div>
+
+<div id="kitchen-live"
+     data-poll-url="{% url 'kitchen:board' %}"
+     data-ws-url="/ws/kitchen/{{ restaurant.id }}/"
+     data-poll-interval="10000"
+     data-sound="true">
+    {% include "kitchen/_board_columns.html" %}
+</div>
+{% endblock %}

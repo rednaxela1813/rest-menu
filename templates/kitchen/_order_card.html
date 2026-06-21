@@ -1,0 +1,37 @@
+{% load i18n %}
+<div class="order-card {% if new %}order-card--new{% endif %}">
+    <div class="order-card__head">
+        <span>{{ order.order_number }} — {% if order.table %}{{ order.table }}{% else %}—{% endif %}</span>
+        <span class="timer" data-since="{{ order.created_at|date:'c' }}" data-overdue="15">--:--</span>
+    </div>
+    {% for item in order.items.all %}
+    <div style="margin-top:8px;">
+        <strong>{{ item.quantity }}× {{ item.item_name_snapshot|upper }}</strong>
+        {% for m in item.modifiers.all %}
+            {% if m.price_delta > 0 %}
+            <div class="mod-add">+ {{ m.option_name_snapshot|upper }}</div>
+            {% else %}
+            <div class="mod-remove">{{ m.option_name_snapshot|upper }}</div>
+            {% endif %}
+        {% endfor %}
+        {% if item.customer_comment %}<div class="note">{{ item.customer_comment }}</div>{% endif %}
+    </div>
+    {% endfor %}
+    {% if order.customer_comment %}<div class="note">{% trans "POZNÁMKA" %}: {{ order.customer_comment }}</div>{% endif %}
+
+    <div style="display:flex;gap:8px;margin-top:10px;">
+        {% if stage == "waiting" %}
+        <form method="post" action="{% url 'kitchen:start' order.public_id %}" style="flex:1;">{% csrf_token %}
+            <input type="hidden" name="version" value="{{ order.version }}">
+            <button class="btn btn--primary btn--block">{% trans "Začať prípravu" %}</button></form>
+        {% elif stage == "prep" %}
+        <form method="post" action="{% url 'kitchen:ready' order.public_id %}" style="flex:1;">{% csrf_token %}
+            <input type="hidden" name="version" value="{{ order.version }}">
+            <button class="btn btn--ok btn--block">{% trans "Hotovo" %}</button></form>
+        {% elif stage == "ready" %}
+        <form method="post" action="{% url 'kitchen:back' order.public_id %}" style="flex:1;">{% csrf_token %}
+            <input type="hidden" name="version" value="{{ order.version }}">
+            <button class="btn btn--block">{% trans "Vrátiť do prípravy" %}</button></form>
+        {% endif %}
+    </div>
+</div>

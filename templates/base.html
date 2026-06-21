@@ -1,0 +1,29 @@
+{% load i18n static %}<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE|default:'sk' }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>{% block title %}Burger Menu{% endblock %}</title>
+    {# All assets are served locally — no CDN dependency (works without internet). #}
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    <script src="{% static 'js/htmx.min.js' %}" defer></script>
+    {% block head_extra %}{% endblock %}
+</head>
+{# hx-headers sends the CSRF token with every HTMX request. #}
+<body class="{% block body_class %}{% endblock %}" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="message message--{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+
+    <div id="toast" class="toast" aria-live="polite"></div>
+
+    <script src="{% static 'js/app.js' %}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

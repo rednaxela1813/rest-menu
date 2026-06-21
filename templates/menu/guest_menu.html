@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{{ restaurant.name }} – Menu{% endblock %}
+{% block body_class %}menu-page{% endblock %}
+
+{% block content %}
+<header class="menu-hero">
+    <div class="menu-hero__top">
+        <div class="menu-hero__brand">
+            {% if restaurant.logo %}<img src="{{ restaurant.logo.url }}" alt="" class="menu-hero__logo">{% endif %}
+            <div>
+                <h1 class="menu-hero__title">{{ restaurant.name }}</h1>
+                {% if restaurant.description %}<p class="menu-hero__sub">{{ restaurant.description }}</p>{% endif %}
+            </div>
+        </div>
+        <div class="menu-hero__right">
+            {% if table %}<span class="table-badge">{{ table }}</span>{% endif %}
+            {% if active_order %}
+            {# Live order status: polls every 8s, instant via WebSocket. #}
+            <a class="order-chip" id="order-chip"
+               href="{% url 'orders:order_status' active_order.public_id %}"
+               data-poll-url="{% url 'orders:order_chip' active_order.public_id %}"
+               data-ws-url="/ws/order/{{ active_order.public_id }}/"
+               data-poll-interval="8000">
+                {% include "orders/_order_chip.html" with order=active_order %}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {# Sticky category chips for quick jumping. #}
+    <nav class="catnav">
+        {% for category, items in sections %}
+        <a href="#cat-{{ category.slug }}" class="catnav__chip">{{ category.name }}</a>
+        {% endfor %}
+    </nav>
+</header>
+
+<main class="menu-main">
+    {% if featured %}
+    <section>
+        <h2 class="section-title">⭐ {% trans "Odporúčame" %}</h2>
+        <div class="dish-list">
+            {% for item in featured %}{% include "menu/_item_card.html" %}{% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    {% for category, items in sections %}
+    <section id="cat-{{ category.slug }}" class="menu-section">
+        <h2 class="section-title">{{ category.name }}</h2>
+        {% if category.description %}<p class="section-desc">{{ category.description }}</p>{% endif %}
+        <div class="dish-list">
+            {% for item in items %}{% include "menu/_item_card.html" %}{% endfor %}
+        </div>
+    </section>
+    {% empty %}
+    <p class="muted">{% trans "Menu sa pripravuje." %}</p>
+    {% endfor %}
+</main>
+
+{% include "orders/_cart_fab.html" %}
+{% endblock %}

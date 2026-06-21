@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{{ item.name }}{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <a href="{% url 'menu:guest_menu' %}" class="btn">← {% trans "Späť" %}</a>
+    <h1>{{ item.name }}</h1>
+    <span></span>
+</div>
+
+<div class="container" style="padding-bottom:90px;">
+    {% if item.image %}<img src="{{ item.image.url }}" alt="{{ item.name }}" style="border-radius:14px;">{% endif %}
+    {% if item.description %}<p>{{ item.description }}</p>{% endif %}
+    {% if item.allergens.all %}
+    <p class="muted">{% trans "Alergény" %}:
+        {% for a in item.allergens.all %}{{ a.code }}{% if not forloop.last %}, {% endif %}{% endfor %}
+    </p>
+    {% endif %}
+    <p class="card__price" style="font-size:1.4rem;">{{ item.price }} {{ item.restaurant.currency }}</p>
+
+    <form method="post" action="{% url 'orders:cart_add' %}" data-once>
+        {% csrf_token %}
+        <input type="hidden" name="menu_item_id" value="{{ item.id }}">
+        <input type="hidden" name="public_id" value="{{ item.public_id }}">
+        {% if edit_line %}<input type="hidden" name="edit_line" value="{{ edit_line }}">{% endif %}
+
+        {% comment %} {% for link in item.item_modifier_groups.all %}
+            {% include "menu/_modifier_group.html" %}
+        {% endfor %} {% endcomment %}
+
+        <label>{% trans "Množstvo" %}
+            <input type="number" name="quantity" value="{{ edit_quantity|default:1 }}" min="1" max="20">
+        </label>
+        <label>{% trans "Poznámka" %}
+            <textarea name="comment" rows="2" placeholder="{% trans 'Napr. prerezať na polovicu' %}">{{ edit_comment }}</textarea>
+        </label>
+
+        <button type="submit" class="btn btn--primary btn--block" style="margin-top:12px;">
+            {% if edit_line %}{% trans "Uložiť zmeny" %}{% else %}{% trans "Pridať do košíka" %}{% endif %}
+        </button>
+    </form>
+</div>
+{% endblock %}

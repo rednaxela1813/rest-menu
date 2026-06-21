@@ -1,0 +1,15 @@
+{% load i18n %}
+<div class="board">
+    <div class="column">
+        <h2>{% trans "Čakajú" %} ({{ queue.waiting|length }})</h2>
+        {% for order in queue.waiting %}{% include "kitchen/_order_card.html" with stage="waiting" new=True %}{% endfor %}
+    </div>
+    <div class="column">
+        <h2>{% trans "Pripravuje sa" %} ({{ queue.in_preparation|length }})</h2>
+        {% for order in queue.in_preparation %}{% include "kitchen/_order_card.html" with stage="prep" %}{% endfor %}
+    </div>
+    <div class="column">
+        <h2>{% trans "Pripravené" %}</h2>
+        {% for order in queue.ready %}{% include "kitchen/_order_card.html" with stage="ready" %}{% endfor %}
+    </div>
+</div>

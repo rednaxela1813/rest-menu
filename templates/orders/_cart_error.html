@@ -1,0 +1,11 @@
+{% load i18n %}
+<div class="cfg__error">
+    <p>⚠️ {{ error }}</p>
+    {% if public_id %}
+    <button type="button" class="btn btn--primary"
+            hx-get="{% url 'menu:item_config' public_id %}"
+            hx-target="closest .dish__panel" hx-swap="innerHTML">
+        {% trans "Skúsiť znova" %}
+    </button>
+    {% endif %}
+</div>

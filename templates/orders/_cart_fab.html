@@ -1,0 +1,7 @@
+{% load i18n %}
+<div class="cart-fab" id="cart-fab">
+    <a href="{% url 'orders:cart_detail' %}" class="btn btn--primary btn--block">
+        🛒 {% trans "Zobraziť košík" %}
+        <span class="cart-fab__count" id="cart-fab-count">{{ cart_count }}</span>
+    </a>
+</div>

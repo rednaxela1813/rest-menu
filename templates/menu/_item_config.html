@@ -1,0 +1,53 @@
+{% load i18n %}
+<form class="cfg" hx-post="{% url 'orders:cart_add' %}"
+      hx-target="#panel-{{ item.id }}" hx-swap="innerHTML"
+      hx-disabled-elt="find button[type=submit]">
+    {% csrf_token %}
+    <input type="hidden" name="menu_item_id" value="{{ item.id }}">
+    <input type="hidden" name="public_id" value="{{ item.public_id }}">
+
+    <div class="cfg__head">
+        <h4>{{ item.name }}</h4>
+        <button type="button" class="cfg__close" aria-label="{% trans 'Zavrieť' %}"
+                onclick="closeDish('{{ item.id }}')">✕</button>
+    </div>
+
+    {% if item.description %}<p class="cfg__desc">{{ item.description }}</p>{% endif %}
+
+    {# Visible groups: upsell (fries, drinks) + required (e.g. doneness). #}
+    {% for link in visible_links %}
+        {% include "menu/_modifier_group.html" %}
+    {% endfor %}
+
+    {# Optional composition edits — hidden by default, guest can open them. #}
+    {% if hidden_links %}
+    <details class="cfg__customize">
+        <summary>🛠 {% trans "Upraviť zloženie" %} <span class="cfg__customize-hint">({% trans "voliteľné" %})</span></summary>
+        <div class="cfg__customize-body">
+            {% for link in hidden_links %}
+                {% include "menu/_modifier_group.html" %}
+            {% endfor %}
+        </div>
+    </details>
+    {% endif %}
+
+    <div class="cfg__row">
+        <span class="cfg__label">{% trans "Množstvo" %}</span>
+        <div class="qty">
+            <button type="button" class="qty__btn" onclick="stepQty(this.parentNode, -1)">−</button>
+            <input type="number" name="quantity" value="1" min="1" max="20"
+                   class="qty__input" onchange="recalcCfg(this.form)" inputmode="numeric">
+            <button type="button" class="qty__btn" onclick="stepQty(this.parentNode, 1)">+</button>
+        </div>
+    </div>
+
+    <label class="cfg__comment">
+        <span class="cfg__label">{% trans "Poznámka" %}</span>
+        <textarea name="comment" rows="2" placeholder="{% trans 'Napr. prerezať na polovicu' %}"></textarea>
+    </label>
+
+    <button type="submit" class="btn btn--primary btn--block cfg__add"
+            data-base="{{ item.price|stringformat:'.2f' }}">
+        {% trans "Pridať do košíka" %} · <span class="cfg__total">{{ item.price }}</span> €
+    </button>
+</form>

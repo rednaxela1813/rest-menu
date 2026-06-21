@@ -1,0 +1,12 @@
+{% load i18n %}
+<a href="{% url 'cashier:order_detail' order.public_id %}" style="color:inherit;">
+<div class="order-card {% if new %}order-card--new{% endif %}">
+    <div class="order-card__head">
+        <span>{{ order.order_number }}</span>
+        <span>{% if order.table %}{{ order.table }}{% else %}—{% endif %}</span>
+    </div>
+    <div class="muted">{{ order.created_at|date:"H:i" }} · {{ order.get_source_display }} · {{ order.total_quantity }} ks</div>
+    <div class="card__price">{{ order.total }} €</div>
+    {% if order.customer_comment %}<div class="muted">📝 {{ order.customer_comment|truncatechars:40 }}</div>{% endif %}
+</div>
+</a>

@@ -147,23 +147,31 @@ function stepQty(wrap, delta) {
   recalcCfg(input.form);
 }
 
+function resetPanel(panel) {
+  if (!panel) return;
+  // Drop the clip-lift styles applied after opening (see afterSwap).
+  panel.style.maxHeight = "";
+  panel.style.overflow = "";
+  panel.classList.remove("open");
+  panel.innerHTML = "";
+}
+
 function closeDish(itemId) {
   var dish = document.getElementById("dish-" + itemId);
   if (!dish) return;
   dish.classList.remove("expanded");
-  var panel = dish.querySelector(".dish__panel");
-  if (panel) {
-    panel.classList.remove("open");
-    panel.innerHTML = "";
+  resetPanel(dish.querySelector(".dish__panel"));
+  if (!document.querySelector(".dish.expanded")) {
+    document.body.classList.remove("config-open");
   }
 }
 
 function closeAllDishes() {
   document.querySelectorAll(".dish.expanded").forEach(function (dish) {
     dish.classList.remove("expanded");
-    var panel = dish.querySelector(".dish__panel");
-    if (panel) { panel.classList.remove("open"); panel.innerHTML = ""; }
+    resetPanel(dish.querySelector(".dish__panel"));
   });
+  document.body.classList.remove("config-open");
 }
 
 function showToast(text) {
@@ -188,6 +196,16 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
+  // Accordion exclusivity: opening one modifier group folds its siblings (at the
+  // same level). `toggle` doesn't bubble, so listen in the capture phase.
+  document.body.addEventListener("toggle", function (e) {
+    var d = e.target;
+    if (!d.matches || !d.matches("details.cfg__group") || !d.open) return;
+    d.parentNode.querySelectorAll(":scope > details.cfg__group[open]").forEach(function (other) {
+      if (other !== d) other.open = false;
+    });
+  }, true);
+
   // After the config form loads, expand the card and bind the live total.
   document.body.addEventListener("htmx:afterSwap", function (e) {
     var panel = e.target;
@@ -199,6 +217,15 @@ document.addEventListener("DOMContentLoaded", function () {
         });
         panel.classList.add("open");
         panel.closest(".dish").classList.add("expanded");
+        document.body.classList.add("config-open");
+        // Once the expand transition ends, lift the height clip so the sticky
+        // add button pins to the viewport and tall panels aren't cut off.
+        panel.addEventListener("transitionend", function te(ev) {
+          if (ev.propertyName === "max-height" && panel.classList.contains("open")) {
+            panel.style.maxHeight = "none";
+            panel.style.overflow = "visible";
+          }
+        }, { once: true });
         recalcCfg(panel.querySelector(".cfg"));
         panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }

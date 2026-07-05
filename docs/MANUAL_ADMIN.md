@@ -16,9 +16,16 @@ Administrácia: `http://<server>/admin/`
    - `aktívna položka` = vypnutá natrvalo (zmizne z menu).
    - `momentálne dostupná` = dočasne vypredané (zostane viditeľná, nedá sa objednať).
    - Hromadné akcie: *Označiť ako dostupné/nedostupné*.
-3. **Skupiny modifikátorov** + **Modifikátory** — extra ingrediencie, odobratie.
+3. **Skupiny modifikátorov** + **Modifikátory** — príloha, omáčka, nápoj, extra/odobratie.
    - `SINGLE` = jeden výber (rádio), `MULTIPLE` = viac (checkbox), `min/max`, `povinné`.
-4. Pri položke v inline časti priradíte skupiny a môžete prepísať `min/max/povinné` pre danú položku.
+   - `predvolene skryté` = skupina sa v objednávke zobrazí ako zbalený panel (klikom sa rozbalí).
+   - **Podkategórie (vnorené skupiny):** vyplňte `nadradená skupina` a skupina sa stane podkategóriou.
+     Napr. kontajner **Nápoj** (bez vlastných možností) → podkategórie **Pivo / Víno / Nealko**,
+     každá s vlastnými možnosťami a vlastným `min/max`. Podporuje sa **jedna úroveň** vnorenia.
+     Kontajner: `max = 0` znamená bez spoločného limitu (možno vybrať napr. pivo aj nealko naraz);
+     `max = 1` obmedzí výber na jeden nápoj spolu.
+4. Pri položke v inline časti priradíte **len skupiny najvyššej úrovne** (kontajner alebo bežnú
+   skupinu) a môžete prepísať `min/max/povinné`. Podkategórie sa priradia automaticky cez strom.
 
 ## Stoly a QR kódy
 **Stoly** — vytvorte stoly (číslo, názov). Pre každý:

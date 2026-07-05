@@ -14,22 +14,10 @@
 
     {% if item.description %}<p class="cfg__desc">{{ item.description }}</p>{% endif %}
 
-    {# Visible groups: upsell (fries, drinks) + required (e.g. doneness). #}
-    {% for link in visible_links %}
-        {% include "menu/_modifier_group.html" %}
+    {# Each top-level group is its own accordion; containers nest subcategories. #}
+    {% for link in links %}
+        {% include "menu/_modifier_group.html" with group=link.modifier_group link=link %}
     {% endfor %}
-
-    {# Optional composition edits — hidden by default, guest can open them. #}
-    {% if hidden_links %}
-    <details class="cfg__customize">
-        <summary>🛠 {% trans "Upraviť zloženie" %} <span class="cfg__customize-hint">({% trans "voliteľné" %})</span></summary>
-        <div class="cfg__customize-body">
-            {% for link in hidden_links %}
-                {% include "menu/_modifier_group.html" %}
-            {% endfor %}
-        </div>
-    </details>
-    {% endif %}
 
     <div class="cfg__row">
         <span class="cfg__label">{% trans "Množstvo" %}</span>

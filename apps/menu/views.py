@@ -108,25 +108,18 @@ def item_detail(request, public_id):
 def item_config(request, public_id):
     """Inline modifier panel loaded into the dish card via HTMX (no page change).
 
-    Groups are split into:
-      * visible — upsell/required (fries, drinks, doneness) shown immediately;
-      * hidden  — optional composition edits (add/remove ingredients) behind a
-        collapsible toggle, so the kitchen isn't flooded with changes.
+    Each top-level modifier group renders as its own collapsible accordion
+    (e.g. "Hranolky", "Omáčka", "Nápoj"). A *container* group expands into nested
+    accordions for its subcategories (e.g. Nápoj → Pivo/Víno/Nealko). Required or
+    non-collapsed groups open by default; optional ones stay folded until tapped.
     """
     try:
         item = selectors.item_with_modifiers(public_id)
     except MenuItem.DoesNotExist as exc:
         raise Http404("Položka neexistuje.") from exc
 
-    visible_links, hidden_links = [], []
-    for link in item.item_modifier_groups.all():
-        if link.modifier_group.collapsed_by_default and not link.effective_required:
-            hidden_links.append(link)
-        else:
-            visible_links.append(link)
-
     return render(
         request,
         "menu/_item_config.html",
-        {"item": item, "visible_links": visible_links, "hidden_links": hidden_links},
+        {"item": item, "links": list(item.item_modifier_groups.all())},
     )

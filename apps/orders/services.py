@@ -6,7 +6,8 @@ import logging
 from django.db import transaction
 from django.utils import timezone
 
-from apps.menu.models import MenuItem, MenuItemModifierGroup, ModifierOption
+from apps.menu.models import MenuItem, ModifierOption
+from apps.menu.services import check_modifier_selection
 from apps.restaurants.models import Restaurant
 
 from .models import Order, OrderItem, OrderItemModifier, OrderStatusHistory
@@ -109,26 +110,9 @@ def create_order(
 
 
 def _validate_modifiers(menu_item: MenuItem, option_ids: list[int]) -> None:
-    links = MenuItemModifierGroup.objects.filter(menu_item=menu_item).select_related(
-        "modifier_group"
-    )
-    options = list(ModifierOption.objects.filter(id__in=option_ids, is_active=True))
-    if len(options) != len(set(option_ids)):
-        raise OrderValidationError("Neplatný alebo neaktívny modifikátor.")
-    by_group: dict[int, int] = {}
-    allowed = {link.modifier_group_id for link in links}
-    for opt in options:
-        if opt.group_id not in allowed:
-            raise OrderValidationError("Modifikátor nepatrí k tejto položke.")
-        by_group[opt.group_id] = by_group.get(opt.group_id, 0) + 1
-    for link in links:
-        count = by_group.get(link.modifier_group_id, 0)
-        if link.effective_required and count < max(1, link.effective_min):
-            raise OrderValidationError(f"Skupina „{link.modifier_group.name}“ je povinná.")
-        if count < link.effective_min:
-            raise OrderValidationError(f"Príliš málo výberov v „{link.modifier_group.name}“.")
-        if link.effective_max and count > link.effective_max:
-            raise OrderValidationError(f"Príliš veľa výberov v „{link.modifier_group.name}“.")
+    error = check_modifier_selection(menu_item, option_ids)
+    if error:
+        raise OrderValidationError(error)
 
 
 # --- State transitions ----------------------------------------------------

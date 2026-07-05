@@ -79,15 +79,15 @@ class Command(BaseCommand):
 
         # Mäso pripravujeme vždy "well done", preto výber prepečenia neponúkame.
 
-        # Upsell: side dish — VISIBLE by default (marketing).
+        # Príloha — collapsible accordion (tap to reveal the 6 choices).
         sides, _ = ModifierGroup.objects.update_or_create(
-            name_sk="Vyberte prílohu",
+            name_sk="Príloha",
             defaults={
                 "selection_type": "SINGLE",
                 "min_selections": 0,
                 "max_selections": 1,
                 "is_required": False,
-                "collapsed_by_default": False,
+                "collapsed_by_default": True,
                 "sort_order": 1,
             },
         )
@@ -95,32 +95,76 @@ class Command(BaseCommand):
             ("Bez prílohy", "0.00", True),
             ("Hranolky", "2.50", False),
             ("Sladké zemiaky", "3.00", False),
+            ("Cheese hranolky", "3.20", False),
+            ("Curly hranolky", "3.00", False),
+            ("Pečené zemiaky", "2.80", False),
         ]:
             ModifierOption.objects.get_or_create(
                 group=sides, name_sk=name, defaults={"price_delta": Decimal(price), "is_default": default}
             )
         groups["sides"] = sides
 
-        # Upsell: drink — VISIBLE by default (marketing).
-        drinks, _ = ModifierGroup.objects.update_or_create(
-            name_sk="Vyberte nápoj",
+        # Omáčka — collapsible accordion.
+        sauce, _ = ModifierGroup.objects.update_or_create(
+            name_sk="Omáčka",
             defaults={
                 "selection_type": "SINGLE",
                 "min_selections": 0,
                 "max_selections": 1,
                 "is_required": False,
-                "collapsed_by_default": False,
+                "collapsed_by_default": True,
                 "sort_order": 2,
             },
         )
         for name, price, default in [
-            ("Bez nápoja", "0.00", True),
-            ("Kofola 0,5l", "2.10", False),
-            ("Minerálka", "1.50", False),
+            ("Bez omáčky", "0.00", True),
+            ("Kečup", "0.50", False),
+            ("Majonéza", "0.50", False),
+            ("BBQ", "0.70", False),
+            ("Cesnaková", "0.70", False),
+            ("Pikantná", "0.70", False),
         ]:
             ModifierOption.objects.get_or_create(
-                group=drinks, name_sk=name, defaults={"price_delta": Decimal(price), "is_default": default}
+                group=sauce, name_sk=name, defaults={"price_delta": Decimal(price), "is_default": default}
             )
+        groups["sauce"] = sauce
+
+        # Nápoj — container group with beer/wine/soft-drink subcategories. Each
+        # subcategory keeps its own rule (pick up to 1); the container has no
+        # aggregate cap (max_selections=0), so e.g. a beer AND a soft drink are
+        # allowed together.
+        drinks, _ = ModifierGroup.objects.update_or_create(
+            name_sk="Nápoj",
+            defaults={
+                "min_selections": 0,
+                "max_selections": 0,
+                "is_required": False,
+                "collapsed_by_default": True,
+                "sort_order": 3,
+            },
+        )
+        subcategories = [
+            ("Pivo", [("Šariš 0,5l", "2.20"), ("Zlatý Bažant 0,5l", "2.40"), ("Corgoň 0,5l", "2.30")]),
+            ("Víno", [("Frankovka 0,2l", "2.80"), ("Rizling 0,2l", "2.80")]),
+            ("Nealko", [("Kofola 0,5l", "2.10"), ("Minerálka", "1.50"), ("Coca-Cola 0,33l", "2.00")]),
+        ]
+        for idx, (sub_name, options) in enumerate(subcategories):
+            sub, _ = ModifierGroup.objects.update_or_create(
+                name_sk=sub_name,
+                parent=drinks,
+                defaults={
+                    "selection_type": "SINGLE",
+                    "min_selections": 0,
+                    "max_selections": 1,
+                    "is_required": False,
+                    "collapsed_by_default": True,
+                    "sort_order": idx,
+                },
+            )
+            for name, price in options:
+                ModifierOption.objects.get_or_create(
+                    group=sub, name_sk=name, defaults={"price_delta": Decimal(price)}
+                )
         groups["drinks"] = drinks
 
         # Composition edits — HIDDEN by default (kept off the kitchen's radar).
@@ -167,8 +211,8 @@ class Command(BaseCommand):
             restaurant=restaurant, slug="napoje", defaults={"name_sk": "Nápoje", "sort_order": 3}
         )
 
-        # Burgers offer fries + drinks (visible upsell) and hidden composition edits.
-        burger_groups = ["sides", "drinks", "extras", "remove"]
+        # Burgers offer fries + sauce + a drink tree, plus composition edits.
+        burger_groups = ["sides", "sauce", "drinks", "extras", "remove"]
         items = [
             (burgers, "Kovboj", "8.90", True, burger_groups, ["1", "7"]),
             (burgers, "Klasik", "7.50", True, burger_groups, ["1", "7"]),

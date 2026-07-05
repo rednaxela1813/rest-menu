@@ -166,7 +166,9 @@ label { display: block; margin: 6px 0; font-weight: 600; }
     background: var(--surface); border: 1px solid #2c3340; border-radius: 18px;
     overflow: hidden; transition: border-color .2s, box-shadow .2s, transform .15s;
 }
-.dish.expanded { border-color: var(--accent); box-shadow: 0 12px 40px rgba(0,0,0,.45); }
+/* overflow:visible while expanded so the sticky add button can pin to the
+   viewport (an overflow:hidden ancestor would trap it inside the card). */
+.dish.expanded { border-color: var(--accent); box-shadow: 0 12px 40px rgba(0,0,0,.45); overflow: visible; }
 .dish--out { opacity: .6; }
 
 .dish__header {
@@ -202,7 +204,9 @@ label { display: block; margin: 6px 0; font-weight: 600; }
 
 /* Expanding configuration panel */
 .dish__panel { max-height: 0; overflow: hidden; transition: max-height .35s ease; }
-.dish__panel.open { max-height: 1400px; }
+/* When fully open, JS lifts the clip (max-height:none; overflow:visible) so the
+   sticky add button can pin to the viewport and tall panels never get cut off. */
+.dish__panel.open { max-height: 2000px; }
 
 .cfg { padding: 4px 16px 18px; border-top: 1px solid #2c3340; }
 .cfg__head { display: flex; align-items: center; justify-content: space-between; margin: 12px 0 6px; }
@@ -213,9 +217,21 @@ label { display: block; margin: 6px 0; font-weight: 600; }
 }
 .cfg__desc { color: var(--muted); margin: 0 0 12px; font-size: .92rem; }
 
-.cfg__group { border: none; padding: 0; margin: 14px 0; }
-.cfg__group legend { font-weight: 700; font-size: 1.02rem; padding: 0; margin-bottom: 8px; }
+/* Each modifier group is a collapsible accordion; containers nest subgroups. */
+.cfg__group { margin: 10px 0; border: 1px solid #3a424f; border-radius: 12px; overflow: hidden; }
+.cfg__group-summary {
+    list-style: none; cursor: pointer; padding: 13px 14px; font-weight: 700;
+    font-size: 1.02rem; background: var(--surface-2); display: flex;
+    align-items: center; gap: 8px; user-select: none;
+}
+.cfg__group-summary::-webkit-details-marker { display: none; }
+.cfg__group-summary::after { content: "▾"; margin-left: auto; color: var(--muted); transition: transform .2s; }
+.cfg__group[open] > .cfg__group-summary::after { transform: rotate(180deg); }
 .cfg__group .req { color: var(--danger); }
+.cfg__group-body { padding: 8px 14px 12px; }
+/* Nested subcategory accordions sit slightly inset and lighter. */
+.cfg__group-body .cfg__group { border-style: dashed; margin: 8px 0; }
+.cfg__options { border: none; padding: 0; margin: 0; }
 
 .opt {
     display: flex; align-items: center; gap: 12px; padding: 11px 12px;
@@ -226,20 +242,6 @@ label { display: block; margin: 6px 0; font-weight: 600; }
 .opt input { width: 22px; height: 22px; accent-color: var(--accent); flex: 0 0 auto; }
 .opt__name { flex: 1; }
 .opt__price { color: var(--accent-2); font-weight: 700; font-size: .9rem; }
-
-/* Collapsible "edit composition" section — hidden by default. */
-.cfg__customize { margin: 14px 0; border: 1px dashed #3a424f; border-radius: 12px; overflow: hidden; }
-.cfg__customize > summary {
-    list-style: none; cursor: pointer; padding: 13px 14px; font-weight: 700;
-    background: var(--surface-2); display: flex; align-items: center; gap: 8px;
-    user-select: none;
-}
-.cfg__customize > summary::-webkit-details-marker { display: none; }
-.cfg__customize > summary::after { content: "▾"; margin-left: auto; color: var(--muted); transition: transform .2s; }
-.cfg__customize[open] > summary::after { transform: rotate(180deg); }
-.cfg__customize-hint { color: var(--muted); font-weight: 500; font-size: .85rem; }
-.cfg__customize-body { padding: 6px 14px 12px; }
-.cfg__customize-body .cfg__group:first-child { margin-top: 6px; }
 
 /* Cart line controls: ± stepper + edit + remove */
 .cart-line-actions { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
@@ -263,8 +265,18 @@ label { display: block; margin: 6px 0; font-weight: 600; }
 
 .cfg__comment { display: block; margin: 12px 0; }
 .cfg__comment .cfg__label { display: block; margin-bottom: 6px; }
-.cfg__add { margin-top: 14px; font-size: 1.05rem; }
+/* Stays pinned to the bottom of the screen so it's always tappable, however
+   many groups are open. .cart-fab is hidden while configuring (see below). */
+.cfg__add {
+    position: sticky; bottom: 12px; z-index: 6;
+    margin-top: 14px; font-size: 1.05rem;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, .55);
+}
 .cfg__total { font-weight: 800; }
+
+/* Hide the floating cart button while a dish config panel is open, so it
+   doesn't sit on top of the sticky "add to cart" button. */
+body.config-open .cart-fab { display: none; }
 
 /* Added / error states inside the panel */
 .cfg__done { padding: 26px 16px; text-align: center; }

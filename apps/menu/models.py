@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
@@ -161,6 +162,19 @@ class ModifierGroup(PublicIDModel, TimeStampedModel):
     )
     sort_order = models.PositiveIntegerField(_("poradie"), default=0)
     is_active = models.BooleanField(_("aktívna"), default=True)
+    # A group is either a *container* (has child groups, no own options — e.g.
+    # "Nápoj" → Pivo/Víno/Nealko) or a *leaf* (has options, no children). Only
+    # one level of nesting is supported. For containers, min/max_selections act
+    # as an optional aggregate cap across all children (0 = no aggregate limit);
+    # each child keeps its own selection rules.
+    parent = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="children",
+        verbose_name=_("nadradená skupina"),
+    )
 
     class Meta:
         verbose_name = _("skupina modifikátorov")
@@ -173,6 +187,25 @@ class ModifierGroup(PublicIDModel, TimeStampedModel):
     @property
     def name(self) -> str:
         return _localized(self, "name")
+
+    @property
+    def is_container(self) -> bool:
+        """True if this group groups child subcategories instead of options.
+
+        Relies on the prefetched ``children`` cache when available so templates
+        don't trigger a query per group.
+        """
+        return any(self.children.all())
+
+    def clean(self) -> None:
+        super().clean()
+        if self.parent_id and self.parent_id == self.pk:
+            raise ValidationError({"parent": _("Skupina nemôže byť nadradená sama sebe.")})
+        # Only one level of nesting: a subgroup cannot itself have a parent.
+        if self.parent and self.parent.parent_id:
+            raise ValidationError(
+                {"parent": _("Podporuje sa len jedna úroveň vnorenia podkategórií.")}
+            )
 
 
 class ModifierOption(PublicIDModel, TimeStampedModel):

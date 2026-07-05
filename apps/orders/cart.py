@@ -10,7 +10,8 @@ import uuid
 from dataclasses import dataclass
 from decimal import Decimal
 
-from apps.menu.models import MenuItem, MenuItemModifierGroup, ModifierOption
+from apps.menu.models import MenuItem, ModifierOption
+from apps.menu.services import check_modifier_selection
 
 CART_SESSION_KEY = "cart"
 
@@ -106,38 +107,9 @@ class Cart:
     @staticmethod
     def _validate_modifier_rules(item: MenuItem, option_ids: list[int]) -> None:
         """Enforce required groups and min/max selections on the server."""
-        links = MenuItemModifierGroup.objects.filter(menu_item=item).select_related(
-            "modifier_group"
-        )
-        options = ModifierOption.objects.filter(id__in=option_ids, is_active=True)
-        options_by_group: dict[int, list[ModifierOption]] = {}
-        valid_ids = set()
-        for opt in options:
-            options_by_group.setdefault(opt.group_id, []).append(opt)
-            valid_ids.add(opt.id)
-
-        unknown = set(option_ids) - valid_ids
-        if unknown:
-            raise CartError("Vybrali ste neplatný alebo nedostupný modifikátor.")
-
-        allowed_group_ids = {link.modifier_group_id for link in links}
-        for opt in options:
-            if opt.group_id not in allowed_group_ids:
-                raise CartError("Modifikátor nepatrí k tejto položke.")
-
-        for link in links:
-            chosen = options_by_group.get(link.modifier_group_id, [])
-            count = len(chosen)
-            if link.effective_required and count < max(1, link.effective_min):
-                raise CartError(f"Skupina „{link.modifier_group.name}“ je povinná.")
-            if count < link.effective_min:
-                raise CartError(
-                    f"V skupine „{link.modifier_group.name}“ vyberte aspoň {link.effective_min}."
-                )
-            if link.effective_max and count > link.effective_max:
-                raise CartError(
-                    f"V skupine „{link.modifier_group.name}“ vyberte najviac {link.effective_max}."
-                )
+        error = check_modifier_selection(item, option_ids)
+        if error:
+            raise CartError(error)
 
     # Reading -----------------------------------------------------------
     def lines(self) -> list[CartLine]:

@@ -1,10 +1,13 @@
-"""Visible upsell groups vs. hidden (collapsible) composition-edit groups."""
+"""Each modifier group renders as its own accordion (open or collapsed)."""
 import pytest
 from django.urls import reverse
 
 from tests import factories
 
 pytestmark = pytest.mark.django_db
+
+OPEN = '<details class="cfg__group" open>'
+CLOSED = '<details class="cfg__group">'
 
 
 @pytest.fixture
@@ -17,32 +20,29 @@ def _link(burger, group):
     return factories.MenuItemModifierGroupFactory(menu_item=burger, modifier_group=group)
 
 
-def test_visible_group_rendered_outside_details(client, burger):
-    drinks = factories.ModifierGroupFactory(name_sk="Vyberte nápoj", collapsed_by_default=False)
+def test_non_collapsed_group_renders_open_accordion(client, burger):
+    drinks = factories.ModifierGroupFactory(name_sk="Nápoj", collapsed_by_default=False)
     factories.ModifierOptionFactory(group=drinks, name_sk="Kofola")
     _link(burger, drinks)
 
     body = client.get(reverse("menu:item_config", args=[burger.public_id])).content.decode()
-    assert "Vyberte nápoj" in body
-    # The upsell group must not be inside the collapsible <details> block.
-    head = body.split("<details", 1)[0]
-    assert "Vyberte nápoj" in head
+    assert "Nápoj" in body
+    assert OPEN in body
 
 
-def test_hidden_group_rendered_inside_details(client, burger):
+def test_collapsed_group_renders_closed_accordion(client, burger):
     remove = factories.ModifierGroupFactory(name_sk="Odobrať ingrediencie", collapsed_by_default=True)
     factories.ModifierOptionFactory(group=remove, name_sk="Bez cibule")
     _link(burger, remove)
 
     body = client.get(reverse("menu:item_config", args=[burger.public_id])).content.decode()
-    assert "<details" in body
-    details = body.split("<details", 1)[1]
-    assert "Odobrať ingrediencie" in details
-    assert "Upraviť zloženie" in body
+    assert "Odobrať ingrediencie" in body
+    # Folded by default: a cfg__group <details> without the `open` attribute.
+    assert CLOSED in body
 
 
-def test_required_group_stays_visible_even_if_collapsed_flag_set(client, burger):
-    # A required group must always be shown, never hidden behind the toggle.
+def test_required_group_opens_even_if_collapsed_flag_set(client, burger):
+    # A required group must always be expanded, never folded away.
     doneness = factories.ModifierGroupFactory(
         name_sk="Prepečenie", is_required=True, collapsed_by_default=True
     )
@@ -52,17 +52,9 @@ def test_required_group_stays_visible_even_if_collapsed_flag_set(client, burger)
     )
 
     body = client.get(reverse("menu:item_config", args=[burger.public_id])).content.decode()
-    head = body.split("<details", 1)[0] if "<details" in body else body
-    assert "Prepečenie" in head
-
-
-def test_no_details_block_when_no_hidden_groups(client, burger):
-    visible = factories.ModifierGroupFactory(name_sk="Vyberte prílohu", collapsed_by_default=False)
-    factories.ModifierOptionFactory(group=visible, name_sk="Hranolky")
-    _link(burger, visible)
-
-    body = client.get(reverse("menu:item_config", args=[burger.public_id])).content.decode()
-    assert "<details" not in body
+    assert "Prepečenie" in body
+    assert OPEN in body
+    assert CLOSED not in body
 
 
 def test_single_groups_have_independent_field_names(client, burger):

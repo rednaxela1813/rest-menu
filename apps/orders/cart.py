@@ -10,7 +10,7 @@ import uuid
 from dataclasses import dataclass
 from decimal import Decimal
 
-from apps.menu.models import MenuItem, ModifierOption
+from apps.menu.models import MenuItem, ModifierGroup, ModifierOption
 from apps.menu.services import check_modifier_selection
 
 CART_SESSION_KEY = "cart"
@@ -18,7 +18,8 @@ CART_SESSION_KEY = "cart"
 
 @dataclass
 class CartLineModifier:
-    option_id: int
+    option_id: int | None
+    menu_item_id: int | None
     group_name: str
     option_name: str
     price_delta: Decimal
@@ -65,7 +66,15 @@ class Cart:
         self._save()
 
     # Mutations ---------------------------------------------------------
-    def add(self, *, menu_item_id: int, quantity: int, comment: str, option_ids: list[int]) -> str:
+    def add(
+        self,
+        *,
+        menu_item_id: int,
+        quantity: int,
+        comment: str,
+        option_ids: list[int],
+        menu_item_modifiers: list[dict] | None = None,
+    ) -> str:
         if quantity < 1:
             raise CartError("Množstvo musí byť aspoň 1.")
         try:
@@ -75,7 +84,8 @@ class Cart:
         if not item.can_be_ordered:
             raise CartError(f"Položka „{item.name}“ nie je momentálne dostupná.")
 
-        self._validate_modifier_rules(item, option_ids)
+        menu_item_modifiers = menu_item_modifiers or []
+        self._validate_modifier_rules(item, option_ids, menu_item_modifiers)
 
         line_id = uuid.uuid4().hex
         self._raw[line_id] = {
@@ -83,6 +93,10 @@ class Cart:
             "quantity": int(quantity),
             "comment": comment.strip(),
             "option_ids": [int(o) for o in option_ids],
+            "menu_item_modifiers": [
+                {"group_id": int(m["group_id"]), "menu_item_id": int(m["menu_item_id"])}
+                for m in menu_item_modifiers
+            ],
         }
         self._save()
         return line_id
@@ -105,9 +119,11 @@ class Cart:
 
     # Validation --------------------------------------------------------
     @staticmethod
-    def _validate_modifier_rules(item: MenuItem, option_ids: list[int]) -> None:
+    def _validate_modifier_rules(
+        item: MenuItem, option_ids: list[int], menu_item_modifiers: list[dict] | None = None
+    ) -> None:
         """Enforce required groups and min/max selections on the server."""
-        error = check_modifier_selection(item, option_ids)
+        error = check_modifier_selection(item, option_ids, menu_item_modifiers)
         if error:
             raise CartError(error)
 
@@ -121,6 +137,23 @@ class Cart:
             o.id: o
             for o in ModifierOption.objects.filter(id__in=all_option_ids).select_related("group")
         }
+        menu_modifier_item_ids = {
+            raw["menu_item_id"]
+            for data in self._raw.values()
+            for raw in data.get("menu_item_modifiers", [])
+        }
+        menu_modifier_items = {
+            i.id: i
+            for i in MenuItem.objects.filter(id__in=menu_modifier_item_ids).select_related("category")
+        }
+        menu_modifier_group_ids = {
+            raw["group_id"]
+            for data in self._raw.values()
+            for raw in data.get("menu_item_modifiers", [])
+        }
+        menu_modifier_groups = {
+            g.id: g for g in ModifierGroup.objects.filter(id__in=menu_modifier_group_ids)
+        }
         for line_id, data in self._raw.items():
             item = items.get(data["menu_item_id"])
             if item is None:
@@ -133,9 +166,24 @@ class Cart:
                 mods.append(
                     CartLineModifier(
                         option_id=opt.id,
+                        menu_item_id=None,
                         group_name=opt.group.name,
                         option_name=opt.name,
                         price_delta=opt.price_delta,
+                    )
+                )
+            for raw in data.get("menu_item_modifiers", []):
+                option_item = menu_modifier_items.get(raw["menu_item_id"])
+                if option_item is None:
+                    continue
+                group = menu_modifier_groups.get(raw["group_id"])
+                mods.append(
+                    CartLineModifier(
+                        option_id=None,
+                        menu_item_id=option_item.id,
+                        group_name=group.name if group else option_item.category.name,
+                        option_name=option_item.name,
+                        price_delta=option_item.price,
                     )
                 )
             result.append(
@@ -180,6 +228,7 @@ class Cart:
                 "quantity": d["quantity"],
                 "comment": d["comment"],
                 "option_ids": d["option_ids"],
+                "menu_item_modifiers": d.get("menu_item_modifiers", []),
             }
             for d in self._raw.values()
         ]

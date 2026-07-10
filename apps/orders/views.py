@@ -60,9 +60,20 @@ def cart_add(request):
     # Option ids arrive either under "options" (legacy/tests) or per-group fields
     # named "opt-<group_id>" (so each radio group is independent).
     option_ids = [int(o) for o in request.POST.getlist("options") if o.isdigit()]
+    menu_item_modifiers = []
     for key, values in request.POST.lists():
         if key.startswith("opt-"):
             option_ids += [int(v) for v in values if v.isdigit()]
+        if key.startswith("menu-opt-"):
+            try:
+                group_id = int(key.removeprefix("menu-opt-"))
+            except ValueError:
+                continue
+            menu_item_modifiers += [
+                {"group_id": group_id, "menu_item_id": int(v)}
+                for v in values
+                if v.isdigit()
+            ]
     comment = request.POST.get("comment", "")
     # Derive the item's public_id (for the "try again" link) from the DB rather
     # than trusting a hidden form field.
@@ -86,6 +97,7 @@ def cart_add(request):
             quantity=quantity,
             comment=comment,
             option_ids=option_ids,
+            menu_item_modifiers=menu_item_modifiers,
         )
     except CartError as exc:
         if is_htmx:

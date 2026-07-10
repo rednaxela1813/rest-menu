@@ -25,7 +25,7 @@ Potrebujete: účet Cloudflare (zdarma) a doménu pridanú do Cloudflare.
 ### 2. Nasmerujte verejné meno na nginx
 V tuneli → **Public Hostname** → **Add a public hostname**:
 - **Subdomain/Domain**: napr. `menu.vasa-restauracia.sk`
-- **Service**: **HTTP** → URL `nginx:80`
+- **Service**: **HTTP** → URL `http://nginx:80`
 
 (Cloudflare ukončuje TLS, k nginx ide po HTTP cez tunel. WebSocket je podporovaný automaticky.)
 

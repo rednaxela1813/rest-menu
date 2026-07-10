@@ -1,10 +1,14 @@
 """Menu domain services shared across apps (e.g. modifier validation)."""
 from __future__ import annotations
 
-from .models import MenuItem, MenuItemModifierGroup, ModifierOption
+from .models import MenuItem, MenuItemModifierGroup, ModifierGroup, ModifierOption
 
 
-def check_modifier_selection(item: MenuItem, option_ids: list[int]) -> str | None:
+def check_modifier_selection(
+    item: MenuItem,
+    option_ids: list[int],
+    menu_item_modifiers: list[dict] | None = None,
+) -> str | None:
     """Validate chosen modifier options against an item's groups.
 
     Returns a Slovak error message, or ``None`` if the selection is valid.
@@ -21,6 +25,7 @@ def check_modifier_selection(item: MenuItem, option_ids: list[int]) -> str | Non
         .select_related("modifier_group")
         .prefetch_related("modifier_group__children")
     )
+    menu_item_modifiers = menu_item_modifiers or []
     options = list(
         ModifierOption.objects.filter(id__in=option_ids, is_active=True).select_related("group")
     )
@@ -35,13 +40,52 @@ def check_modifier_selection(item: MenuItem, option_ids: list[int]) -> str | Non
 
     # Allowed = each linked top-level group plus its child subgroups.
     allowed: set[int] = set()
+    allowed_groups: dict[int, ModifierGroup] = {}
     for link in links:
         group = link.modifier_group
         allowed.add(group.id)
-        allowed.update(child.id for child in group.children.all())
+        allowed_groups[group.id] = group
+        for child in group.children.all():
+            allowed.add(child.id)
+            allowed_groups[child.id] = child
     for opt in options:
         if opt.group_id not in allowed:
             return "Modifikátor nepatrí k tejto položke."
+        if allowed_groups[opt.group_id].menu_item_source_category_id:
+            return "Modifikátor nepatrí k tejto položke."
+
+    menu_option_item_ids = []
+    for raw in menu_item_modifiers:
+        try:
+            group_id = int(raw["group_id"])
+            menu_item_id = int(raw["menu_item_id"])
+        except (KeyError, TypeError, ValueError):
+            return "Vybrali ste neplatný alebo nedostupný modifikátor."
+        group = allowed_groups.get(group_id)
+        if group is None or not group.menu_item_source_category_id:
+            return "Modifikátor nepatrí k tejto položke."
+        menu_option_item_ids.append(menu_item_id)
+        raw["group_id"] = group_id
+        raw["menu_item_id"] = menu_item_id
+
+    menu_option_items = {
+        option_item.id: option_item
+        for option_item in MenuItem.objects.filter(
+            id__in=menu_option_item_ids,
+            restaurant_id=item.restaurant_id,
+            is_active=True,
+            is_available=True,
+        )
+    }
+    if set(menu_option_item_ids) - set(menu_option_items):
+        return "Vybrali ste neplatný alebo nedostupný modifikátor."
+
+    for raw in menu_item_modifiers:
+        group = allowed_groups[raw["group_id"]]
+        option_item = menu_option_items[raw["menu_item_id"]]
+        if option_item.category_id != group.menu_item_source_category_id:
+            return "Modifikátor nepatrí k tejto položke."
+        count_by_group[group.id] = count_by_group.get(group.id, 0) + 1
 
     for link in links:
         group = link.modifier_group

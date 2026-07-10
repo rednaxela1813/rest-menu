@@ -87,9 +87,19 @@ def item_detail(request, public_id):
         raw = Cart(request.session).get_raw(edit)
         if raw and raw["menu_item_id"] == item.id:
             selected_ids = set(raw["option_ids"])
+            selected_menu_modifier_keys = {
+                f"{raw_item['group_id']}:{raw_item['menu_item_id']}"
+                for raw_item in raw.get("menu_item_modifiers", [])
+            }
             edit_quantity = raw["quantity"]
             edit_comment = raw["comment"]
             edit_line = edit
+        else:
+            selected_menu_modifier_keys = set()
+    else:
+        selected_menu_modifier_keys = set()
+
+    selectors.attach_menu_item_modifier_options(item, selected_menu_modifier_keys)
 
     return render(
         request,
@@ -117,6 +127,7 @@ def item_config(request, public_id):
         item = selectors.item_with_modifiers(public_id)
     except MenuItem.DoesNotExist as exc:
         raise Http404("Položka neexistuje.") from exc
+    selectors.attach_menu_item_modifier_options(item)
 
     return render(
         request,

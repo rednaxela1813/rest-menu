@@ -132,7 +132,18 @@ class OrderItem(PublicIDModel, TimeStampedModel):
 class OrderItemModifier(models.Model):
     order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, related_name="modifiers")
     modifier_option = models.ForeignKey(
-        "menu.ModifierOption", on_delete=models.PROTECT, related_name="order_item_modifiers"
+        "menu.ModifierOption",
+        on_delete=models.PROTECT,
+        related_name="order_item_modifiers",
+        null=True,
+        blank=True,
+    )
+    modifier_menu_item = models.ForeignKey(
+        "menu.MenuItem",
+        on_delete=models.PROTECT,
+        related_name="order_item_menu_modifiers",
+        null=True,
+        blank=True,
     )
     group_name_snapshot = models.CharField(max_length=150)
     option_name_snapshot = models.CharField(max_length=150)

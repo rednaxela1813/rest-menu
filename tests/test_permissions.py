@@ -9,12 +9,14 @@ pytestmark = pytest.mark.django_db
 
 def test_guest_cannot_access_kitchen(client):
     resp = client.get(reverse("kitchen:board"))
-    assert resp.status_code in (302, 403)  # redirect to login
+    assert resp.status_code == 302
+    assert resp.url.startswith(f"{reverse('accounts:login')}?next=")
 
 
 def test_guest_cannot_access_cashier(client):
     resp = client.get(reverse("cashier:board"))
-    assert resp.status_code in (302, 403)
+    assert resp.status_code == 302
+    assert resp.url.startswith(f"{reverse('accounts:login')}?next=")
 
 
 def test_kitchen_user_forbidden_on_cashier_board(client, kitchen_user, restaurant):

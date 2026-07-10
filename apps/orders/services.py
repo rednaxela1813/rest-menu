@@ -6,7 +6,7 @@ import logging
 from django.db import transaction
 from django.utils import timezone
 
-from apps.menu.models import MenuItem, ModifierOption
+from apps.menu.models import MenuItem, ModifierGroup, ModifierOption
 from apps.menu.services import check_modifier_selection
 from apps.restaurants.models import Restaurant
 
@@ -75,7 +75,8 @@ def create_order(
             raise OrderValidationError(f"Položka „{menu_item.name}“ nie je dostupná.")
 
         option_ids = [int(o) for o in raw.get("option_ids", [])]
-        _validate_modifiers(menu_item, option_ids)
+        menu_item_modifiers = raw.get("menu_item_modifiers", [])
+        _validate_modifiers(menu_item, option_ids, menu_item_modifiers)
 
         order_item = OrderItem.objects.create(
             order=order,
@@ -99,6 +100,29 @@ def create_order(
                 price_delta=opt.price_delta,
                 quantity=1,
             )
+        menu_option_groups = {
+            group.id: group
+            for group in ModifierGroup.objects.filter(
+                id__in=[raw_item["group_id"] for raw_item in menu_item_modifiers]
+            )
+        }
+        menu_option_items = {
+            option_item.id: option_item
+            for option_item in MenuItem.objects.filter(
+                id__in=[raw_item["menu_item_id"] for raw_item in menu_item_modifiers]
+            )
+        }
+        for raw_item in menu_item_modifiers:
+            group = menu_option_groups[raw_item["group_id"]]
+            option_item = menu_option_items[raw_item["menu_item_id"]]
+            OrderItemModifier.objects.create(
+                order_item=order_item,
+                modifier_menu_item=option_item,
+                group_name_snapshot=group.name,
+                option_name_snapshot=option_item.name,
+                price_delta=option_item.price,
+                quantity=1,
+            )
         order_item.recalculate()
 
     order.recalculate_totals()
@@ -109,8 +133,10 @@ def create_order(
     return order
 
 
-def _validate_modifiers(menu_item: MenuItem, option_ids: list[int]) -> None:
-    error = check_modifier_selection(menu_item, option_ids)
+def _validate_modifiers(
+    menu_item: MenuItem, option_ids: list[int], menu_item_modifiers: list[dict] | None = None
+) -> None:
+    error = check_modifier_selection(menu_item, option_ids, menu_item_modifiers)
     if error:
         raise OrderValidationError(error)
 

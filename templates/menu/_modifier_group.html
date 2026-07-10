@@ -19,6 +19,29 @@ renders its options as radios/checkboxes.
         {% endfor %}
     {% else %}
         <fieldset class="cfg__options">
+        {% if group.menu_item_source_category_id %}
+        {% if group.selection_type == 'SINGLE' and not required %}
+            <label class="opt">
+                <input type="radio"
+                       name="menu-opt-{{ group.id }}" value=""
+                       data-price="0.00"
+                       {% if not group.has_selected_menu_item_option %}checked{% endif %}
+                       onchange="recalcCfg(this.form)">
+                <span class="opt__name">{% trans "Bez výberu" %}</span>
+            </label>
+        {% endif %}
+        {% for menu_option in group.menu_item_options %}
+            <label class="opt">
+                <input type="{% if group.selection_type == 'SINGLE' %}radio{% else %}checkbox{% endif %}"
+                       name="menu-opt-{{ group.id }}" value="{{ menu_option.id }}"
+                       data-price="{{ menu_option.price|stringformat:'.2f' }}"
+                       {% if menu_option.is_selected_menu_modifier %}checked{% endif %}
+                       onchange="recalcCfg(this.form)">
+                <span class="opt__name">{{ menu_option.name }}</span>
+                {% if menu_option.price %}<span class="opt__price">+{{ menu_option.price }} €</span>{% endif %}
+            </label>
+        {% endfor %}
+        {% else %}
         {% for option in group.options.all %}
             <label class="opt">
                 {# Per-group field name: radio exclusivity scoped to the group. #}
@@ -31,6 +54,7 @@ renders its options as radios/checkboxes.
                 {% if option.price_delta %}<span class="opt__price">+{{ option.price_delta }} €</span>{% endif %}
             </label>
         {% endfor %}
+        {% endif %}
         </fieldset>
     {% endif %}
     </div>

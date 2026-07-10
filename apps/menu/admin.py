@@ -82,13 +82,21 @@ class ModifierGroupAdmin(admin.ModelAdmin):
         "max_selections",
         "is_required",
         "collapsed_by_default",
+        "menu_item_source_category",
     ]
-    list_filter = ["selection_type", "is_required", "collapsed_by_default", "is_active", "parent"]
+    list_filter = [
+        "selection_type",
+        "is_required",
+        "collapsed_by_default",
+        "is_active",
+        "parent",
+        "menu_item_source_category",
+    ]
     list_editable = ["collapsed_by_default"]
     search_fields = ["name_sk", "name_en"]
     # `parent` turns a group into a subcategory (e.g. Pivo under Nápoj). A group
     # with a parent is a leaf with options; a group with children is a container.
-    autocomplete_fields = ["parent"]
+    autocomplete_fields = ["parent", "menu_item_source_category"]
     inlines = [ModifierOptionInline]
 
 

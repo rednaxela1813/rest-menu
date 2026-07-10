@@ -175,6 +175,15 @@ class ModifierGroup(PublicIDModel, TimeStampedModel):
         related_name="children",
         verbose_name=_("nadradená skupina"),
     )
+    menu_item_source_category = models.ForeignKey(
+        "menu.MenuCategory",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="modifier_groups",
+        verbose_name=_("položky z kategórie menu"),
+        help_text=_("Ak je vyplnené, skupina ponúkne aktívne položky z tejto kategórie ako doplnky."),
+    )
 
     class Meta:
         verbose_name = _("skupina modifikátorov")

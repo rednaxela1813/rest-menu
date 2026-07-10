@@ -26,3 +26,5 @@ STORAGES = {
         "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
     },
 }
+
+SECURE_SSL_REDIRECT = config("DJANGO_SECURE_SSL_REDIRECT", default=False, cast=bool)

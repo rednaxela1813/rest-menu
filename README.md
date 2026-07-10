@@ -56,7 +56,7 @@ docker compose -f docker-compose.local.yml exec django python manage.py createsu
 - Menu (demo stôl): otvorte v admine stôl → stiahnite QR, alebo choďte na
   `/table/<číslo>/<token>/`
 - Admin: http://localhost:8000/admin/
-- Pokladňa: http://localhost:8000/staff/cashier/orders/
+- Pokladňa: """"""http://localhost:8000/staff/cashier/orders/""""""
 - Kuchyňa: http://localhost:8000/staff/kitchen/orders/
 
 Demo prihlásenia (po `seed_demo`):

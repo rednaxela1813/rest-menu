@@ -4,9 +4,11 @@ from __future__ import annotations
 from collections.abc import Callable
 from functools import wraps
 
+from django.contrib.auth.views import redirect_to_login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest, HttpResponse
+from django.urls import reverse
 
 
 class RoleRequiredMixin(LoginRequiredMixin):
@@ -37,7 +39,7 @@ def role_required(role_attr: str) -> Callable:
         @wraps(view)
         def wrapper(request: HttpRequest, *args, **kwargs) -> HttpResponse:
             if not request.user.is_authenticated:
-                raise PermissionDenied("Vyžaduje sa prihlásenie.")
+                return redirect_to_login(request.get_full_path(), reverse("accounts:login"))
             if not getattr(request.user, role_attr, False):
                 raise PermissionDenied("Nemáte oprávnenie pre túto akciu.")
             return view(request, *args, **kwargs)

@@ -1,12 +1,20 @@
 # Python
 __pycache__/
 *.py[cod]
+*$py.class
 .venv/
 venv/
+env/
 *.egg-info/
+.eggs/
+.build/
+build/
+dist/
 .mypy_cache/
 .ruff_cache/
 .pytest_cache/
+.coverage
+htmlcov/
 
 # Django
 *.log
@@ -15,14 +23,31 @@ media/
 staticfiles/
 test_media/
 db.sqlite3
+db.sqlite3-journal
 
 # Secrets
 .env
+.env.*
+!.env.example
 
 # Backups
 backups/
+*.dump
+*.sql
+*.sqlite3
+*.bak
+*.backup
+
+# Archives / generated bundles
+*.zip
+*.tar
+*.tar.gz
+*.tgz
 
 # OS / editors
 .DS_Store
+.AppleDouble
 .idea/
 .vscode/
+*.swp
+*.swo

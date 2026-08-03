@@ -2,7 +2,7 @@
 name = "burger-menu"
 version = "0.1.0"
 description = "Lokálny systém elektronického menu a príjmu objednávok pre burgráreň"
-requires-python = ">=3.13"
+requires-python = ">=3.13,<4"
 dependencies = [
     "Django>=5.0,<5.2",
     "psycopg[binary]>=3.1",

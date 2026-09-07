@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from .forms import MenuItemAdminForm
+
 
 from .models import (
     Allergen,
@@ -34,6 +36,7 @@ class MenuItemModifierGroupInline(admin.TabularInline):
 
 @admin.register(MenuItem)
 class MenuItemAdmin(admin.ModelAdmin):
+    form = MenuItemAdminForm
     list_display = [
         "name_sk",
         "category",

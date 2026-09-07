@@ -4,8 +4,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from functools import wraps
 
-from django.contrib.auth.views import redirect_to_login
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest, HttpResponse
 from django.urls import reverse
@@ -30,6 +30,10 @@ class CashierRequiredMixin(RoleRequiredMixin):
 
 class KitchenRequiredMixin(RoleRequiredMixin):
     required_role_attr = "is_kitchen"
+
+
+class WaiterRequiredMixin(RoleRequiredMixin):
+    required_role_attr = "is_waiter"
 
 
 def role_required(role_attr: str) -> Callable:
